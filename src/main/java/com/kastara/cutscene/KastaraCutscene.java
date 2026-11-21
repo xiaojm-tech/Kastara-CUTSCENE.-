@@ -35,6 +35,7 @@ import java.util.UUID;
 public final class KastaraCutscene extends JavaPlugin implements Listener {
     private final Map<UUID, Session> active = new HashMap<>();
     private final Set<UUID> completed = new HashSet<>();
+    private final Set<UUID> pending = new HashSet<>();
     private File playerDataFile;
     private YamlConfiguration playerData;
     private World cinematicWorld;
@@ -53,7 +54,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
     public void onDisable() {
         for (UUID uuid : new ArrayList<>(active.keySet())) {
             Player player = Bukkit.getPlayer(uuid);
-            stopSession(player, false, false);
+            stopSession(player, true, true);
         }
         savePlayerData();
     }
@@ -62,6 +63,9 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         if (!getDataFolder().exists()) getDataFolder().mkdirs();
         playerDataFile = new File(getDataFolder(), "players.yml");
         playerData = YamlConfiguration.loadConfiguration(playerDataFile);
+        for (String raw : playerData.getStringList("pending")) {
+            try { pending.add(UUID.fromString(raw)); } catch (IllegalArgumentException ignored) { }
+        }
         for (String raw : playerData.getStringList("completed")) {
             try { completed.add(UUID.fromString(raw)); }
             catch (IllegalArgumentException ignored) { }
@@ -72,6 +76,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         if (playerData == null) return;
         List<String> values = completed.stream().map(UUID::toString).sorted().toList();
         playerData.set("completed", values);
+        playerData.set("pending", pending.stream().map(UUID::toString).sorted().toList());
         try { playerData.save(playerDataFile); }
         catch (IOException exception) { getLogger().severe("Could not save players.yml: " + exception.getMessage()); }
     }
@@ -80,8 +85,9 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         if (!getConfig().getBoolean("settings.first-join-only", true) || completed.contains(player.getUniqueId())) return;
-
-        // Only mark completed after a successful finish, so failed starts can be retried.
+        if (player.hasPlayedBefore() && !pending.contains(player.getUniqueId())) return;
+        pending.add(player.getUniqueId());
+        savePlayerData();
         long delay = Math.max(1L, getConfig().getLong("settings.start-delay-ticks", 40L));
         Bukkit.getScheduler().runTaskLater(this, () -> {
             if (player.isOnline() && !active.containsKey(player.getUniqueId())) startSession(player);
@@ -205,6 +211,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
             return;
         }
         completed.add(session.playerId);
+        pending.remove(session.playerId);
         savePlayerData();
         cleanup(session);
         active.remove(session.playerId);
