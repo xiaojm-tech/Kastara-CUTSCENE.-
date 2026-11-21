@@ -21,7 +21,7 @@ Output: `target/KASTARA-CUTSCENE-1.0.0.jar`.
 ## Install
 1. Build the JAR and place it in `plugins/`.
 2. Start once to generate `plugins/KASTARA-CUTSCENE/config.yml`.
-3. Edit spawn and camera waypoint coordinates for the actual KASTARA spawn.
+3. The cinematic world and its stage are generated automatically. Player gameplay spawn locations are preserved individually.
 4. Restart the server.
 5. Add the generated TTS file at `resource-pack/assets/kastara/sounds/intro.ogg`.
 6. Zip the *contents* of the repository's `resource-pack/` folder so `pack.mcmeta` and `assets/` are at ZIP root.
@@ -33,7 +33,7 @@ The resource pack source is in the repository root at `resource-pack/`. Minecraf
 The registered sound event is `kastara:intro`.
 
 ## Important first test
-The waypoint coordinates in the default config are illustrative placeholders, not the real KASTARA ruins or altar. Configure the route and spawn before allowing players to use the intro. Test camera spectating on the exact Paper 26.3 build and Minecraft client first.
+The plugin generates an isolated cinematic world named `kastara_cinematic` with a ruined causeway, broken royal walls, pillars and a magical altar. It returns each player to the exact location where they entered the cutscene, so random gameplay spawns are supported. Test camera spectating on the exact Paper 26.3 build and Minecraft client before public use.
 
 ## Voice-over script
 The clean Indonesian TTS script is in `docs/voice-over-id.txt`. Scene timing and camera staging are in `docs/camera-timeline.md`.
