@@ -2,7 +2,7 @@
   "intro": {
     "sounds": [
       {
-        "name": "kastara:intro",
+        "name": "intro",
         "stream": true
       }
     ]
