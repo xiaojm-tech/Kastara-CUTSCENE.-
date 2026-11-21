@@ -1,0 +1,18 @@
+name: KASTARA-CUTSCENE
+version: 1.0.0
+main: com.kastara.cutscene.KastaraCutscene
+api-version: '1.21'
+author: KASTARA
+description: Full cinematic first-join summoning sequence.
+commands:
+  skipintro:
+    description: Skip the KASTARA first-join cinematic.
+    usage: /skipintro
+  kastaracutscene:
+    description: Admin controls for KASTARA cutscenes.
+    usage: /kastaracutscene <play|stop|reload> [player]
+    permission: kastara.cutscene.admin
+permissions:
+  kastara.cutscene.admin:
+    description: Manage KASTARA cutscenes.
+    default: op
