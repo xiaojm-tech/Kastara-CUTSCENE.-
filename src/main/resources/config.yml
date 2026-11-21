@@ -17,7 +17,7 @@ settings:
     pitch: 1.0
   finish:
     title: "&6&lWELCOME TO KASTARA"
-    subtitle: "&7Your destiny begins now"
+    subtitle: "&7The fate of this world now lies in your hands."
     title-fade-in: 10
     title-stay: 70
     title-fade-out: 20
@@ -92,29 +92,32 @@ camera:
 
 scenes:
   - time: 0
-    title: "&6&lTHE FALLEN KINGDOM"
-    subtitle: "&7Dahulu kala, Kastara berdiri megah"
-  - time: 7
+    title: "&6&lKASTARA"
+    subtitle: "&fLong ago, Kastara was a grand kingdom standing beneath the glory of its kings."
+  - time: 4
     title: "&4&lTHE GREAT CALAMITY"
-    subtitle: "&7Sebuah malapetaka mengakhiri segalanya"
-  - time: 13
+    subtitle: "&fYet a catastrophe brought everything to an end."
+  - time: 7
     title: "&5&lTHE LAST WIZARD"
-    subtitle: "&7Mantra terakhir mulai dirapal"
-  - time: 20
+    subtitle: "&fOn the brink of ruin, a legendary mage cast their final spell."
+  - time: 11
     title: "&d&lTHE SUMMONING"
-    subtitle: "&7Jiwa dari dunia lain dipanggil"
-  - time: 28
+    subtitle: "&fThey summoned souls from another world to come to Kastara."
+  - time: 15
     title: "&f&lTHE CHOSEN"
-    subtitle: "&7Kini kaulah salah satu dari mereka"
-  - time: 36
+    subtitle: "&fNow, you are one of them."
+  - time: 17
+    title: "&6&lKASTARA"
+    subtitle: "&fKastara has been waiting for you."
+  - time: 19
     title: "&6&lYOUR DESTINY"
-    subtitle: "&7Nasib Kastara berada di tanganmu"
+    subtitle: "&fThe fate of this world now lies in your hands."
 
 effects:
   summoning:
     enabled: true
-    start-time: 19
-    end-time: 36
+    start-time: 11
+    end-time: 22.5
     particle: PORTAL
     count-per-tick: 8
     sound: "block.beacon.ambient"
