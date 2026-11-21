@@ -1,5 +1,8 @@
 # KASTARA-CUTSCENE v1.0.0
-# Coordinates below are examples. Set them to real locations in your spawn world.
+# The plugin creates a separate cinematic world and builds its own ruined kingdom there.
+cinematic-world:
+  name: kastara_cinematic
+
 settings:
   first-join-only: true
   start-delay-ticks: 40
