@@ -270,13 +270,13 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         List<Waypoint> p = new ArrayList<>();
         if (cinematicWorld == null) return p;
         String w = cinematicWorld.getName();
-        p.add(new Waypoint(0,w,-24,108,-22,45,18));
-        p.add(new Waypoint(3.5,w,-13,94,-12,45,22));
-        p.add(new Waypoint(7,w,-6,86,-5,35,10));
-        p.add(new Waypoint(11,w,0,84,0,180,15));
-        p.add(new Waypoint(15,w,6,91,5,225,12));
-        p.add(new Waypoint(19,w,3,87,2,180,20));
-        p.add(new Waypoint(22.5,w,0,84,0,180,5));
+        p.add(new Waypoint(0,w,0,116,-92,0,18));
+        p.add(new Waypoint(3.5,w,0,110,-76,0,20));
+        p.add(new Waypoint(7,w,-4,102,-59,15,18));
+        p.add(new Waypoint(11,w,0,96,-39,0,12));
+        p.add(new Waypoint(15,w,25,101,-38,270,12));
+        p.add(new Waypoint(19,w,12,91,-12,315,20));
+        p.add(new Waypoint(22.5,w,0,84,0,0,8));
         return p;
     }
 
