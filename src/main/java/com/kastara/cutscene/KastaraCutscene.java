@@ -18,6 +18,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -95,6 +96,12 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
     }
 
     @EventHandler
+    public void onSneakDuringCutscene(PlayerToggleSneakEvent event) {
+        // Sneaking detaches a spectator from its camera target. Keep the cinematic camera locked.
+        if (active.containsKey(event.getPlayer().getUniqueId())) event.setCancelled(true);
+    }
+
+    @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         if (active.containsKey(player.getUniqueId())) {
@@ -156,6 +163,10 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
                     stopSession(current, false, false);
                     return;
                 }
+                // Re-assert spectator mode and camera target every tick. This prevents the viewer
+                // from detaching from the moving camera rig or regaining normal movement.
+                if (current.getGameMode() != GameMode.SPECTATOR) current.setGameMode(GameMode.SPECTATOR);
+                if (current.getSpectatorTarget() != rig) current.setSpectatorTarget(rig);
                 session.elapsedTicks++;
                 double seconds = session.elapsedTicks / 20.0;
                 Location cameraLocation = interpolate(points, seconds);
@@ -259,13 +270,13 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         List<Waypoint> p = new ArrayList<>();
         if (cinematicWorld == null) return p;
         String w = cinematicWorld.getName();
-        p.add(new Waypoint(0,w,-24,108,-22,45,18));
-        p.add(new Waypoint(3.5,w,-13,94,-12,45,22));
-        p.add(new Waypoint(7,w,-6,86,-5,35,10));
-        p.add(new Waypoint(11,w,0,84,0,180,15));
-        p.add(new Waypoint(15,w,6,91,5,225,12));
-        p.add(new Waypoint(19,w,3,87,2,180,20));
-        p.add(new Waypoint(22.5,w,0,84,0,180,5));
+        p.add(new Waypoint(0,w,0,116,-92,0,18));
+        p.add(new Waypoint(3.5,w,0,110,-76,0,20));
+        p.add(new Waypoint(7,w,-4,102,-59,15,18));
+        p.add(new Waypoint(11,w,0,96,-39,0,12));
+        p.add(new Waypoint(15,w,25,101,-38,270,12));
+        p.add(new Waypoint(19,w,12,91,-12,315,20));
+        p.add(new Waypoint(22.5,w,0,84,0,0,8));
         return p;
     }
 
@@ -319,9 +330,110 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
             w.getBlockAt(p[0],y+3,p[1]).setType(Material.AMETHYST_BLOCK,false);
             w.getBlockAt(p[0],y+4,p[1]).setType(Material.END_ROD,false);
         }
+        buildRoyalCastle(w, y);
         w.getPersistentDataContainer().set(key,org.bukkit.persistence.PersistentDataType.BYTE,(byte)1);
         w.setSpawnLocation(0,y+5,0);
         getLogger().info("Generated KASTARA ruined kingdom and summoning altar in "+w.getName());
+    }
+
+
+    /**
+     * Builds a readable gothic royal keep behind the summoning altar. The old stage only
+     * had broken low walls and pillars, which did not communicate that Kastara was once
+     * a grand kingdom. This facade gives the camera a large architectural subject.
+     */
+    private void buildRoyalCastle(World w, int y) {
+        Material stone = Material.DEEPSLATE_BRICKS;
+        Material trim = Material.POLISHED_BLACKSTONE_BRICKS;
+        Material accent = Material.PURPUR_BLOCK;
+        Material roof = Material.POLISHED_DEEPSLATE;
+
+        // Broad raised castle court and approach.
+        for (int x = -28; x <= 28; x++) {
+            for (int z = -66; z <= -20; z++) {
+                if (Math.abs(x) <= 25 && (Math.abs(z + 43) <= 22)) {
+                    w.getBlockAt(x, y, z).setType((x % 6 == 0 || z % 6 == 0) ? trim : stone, false);
+                }
+            }
+        }
+
+        // Main keep: tall central hall with stepped roofline.
+        for (int yy = 1; yy <= 19; yy++) {
+            int halfX = yy < 15 ? 11 : Math.max(5, 11 - (yy - 14));
+            int halfZ = yy < 15 ? 9 : Math.max(4, 9 - (yy - 14));
+            for (int x = -halfX; x <= halfX; x++) {
+                for (int z = -53; z <= -53 + halfZ * 2; z++) {
+                    if (Math.abs(x) == halfX || z == -53 || z == -53 + halfZ * 2) {
+                        w.getBlockAt(x, y + yy, z).setType(stone, false);
+                    }
+                }
+            }
+        }
+        // Tall central entrance and glowing portal-like frame.
+        for (int yy = 1; yy <= 10; yy++) {
+            for (int x = -3; x <= 3; x++) {
+                if (Math.abs(x) == 3 || yy == 10) w.getBlockAt(x, y + yy, -33).setType(accent, false);
+                else w.getBlockAt(x, y + yy, -33).setType(Material.AIR, false);
+            }
+        }
+        for (int x = -4; x <= 4; x++) {
+            w.getBlockAt(x, y + 11, -33).setType(trim, false);
+            w.getBlockAt(x, y + 12, -33).setType(accent, false);
+        }
+
+        // Four monumental corner towers, with battlements and purple vertical windows.
+        int[][] towers = {{-18,-60},{18,-60},{-18,-26},{18,-26}};
+        for (int[] t : towers) {
+            int tx = t[0], tz = t[1];
+            for (int yy = 1; yy <= 25; yy++) {
+                for (int dx = -4; dx <= 4; dx++) {
+                    for (int dz = -4; dz <= 4; dz++) {
+                        if (Math.abs(dx) == 4 || Math.abs(dz) == 4) {
+                            Material block = yy % 7 == 0 ? trim : stone;
+                            if (Math.abs(dx) == 4 && dz == 0 && yy >= 7 && yy <= 18 && yy % 3 != 0) block = accent;
+                            w.getBlockAt(tx + dx, y + yy, tz + dz).setType(block, false);
+                        }
+                    }
+                }
+            }
+            // Crowned battlements and a tapered roof silhouette.
+            for (int dx = -5; dx <= 5; dx++) {
+                for (int dz = -5; dz <= 5; dz++) {
+                    if (Math.abs(dx) == 5 || Math.abs(dz) == 5) {
+                        w.getBlockAt(tx + dx, y + 26, tz + dz).setType(trim, false);
+                    }
+                }
+            }
+            for (int yy = 27; yy <= 32; yy++) {
+                int radius = 5 - (yy - 26);
+                for (int dx = -radius; dx <= radius; dx++) {
+                    for (int dz = -radius; dz <= radius; dz++) {
+                        if (Math.abs(dx) == radius || Math.abs(dz) == radius) {
+                            w.getBlockAt(tx + dx, y + yy, tz + dz).setType(yy % 2 == 0 ? roof : trim, false);
+                        }
+                    }
+                }
+            }
+            w.getBlockAt(tx, y + 33, tz).setType(Material.END_ROD, false);
+        }
+
+        // Side curtain walls and crenellations connect the towers into a single fortress.
+        for (int z = -60; z <= -26; z++) {
+            for (int yy = 1; yy <= 13; yy++) {
+                w.getBlockAt(-18, y + yy, z).setType(stone, false);
+                w.getBlockAt(18, y + yy, z).setType(stone, false);
+            }
+            if (z % 2 == 0) {
+                w.getBlockAt(-18, y + 14, z).setType(trim, false);
+                w.getBlockAt(18, y + 14, z).setType(trim, false);
+            }
+        }
+        // Purple-lit windows on the keep facade.
+        for (int x : new int[]{-7, -3, 3, 7}) {
+            for (int yy = 7; yy <= 12; yy++) {
+                w.getBlockAt(x, y + yy, -43).setType(accent, false);
+            }
+        }
     }
 
     private Location interpolate(List<Waypoint> points, double seconds) {

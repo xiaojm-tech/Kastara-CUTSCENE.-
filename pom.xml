@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.kastara</groupId>
   <artifactId>KASTARA-CUTSCENE</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <name>KASTARA-CUTSCENE</name>
   <description>First-join cinematic system for KASTARA on Paper.</description>
   <properties>
@@ -26,7 +26,7 @@
     </dependency>
   </dependencies>
   <build>
-    <finalName>KASTARA-CUTSCENE-1.0.0</finalName>
+    <finalName>KASTARA-CUTSCENE-1.1.0</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
