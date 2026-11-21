@@ -1,0 +1,132 @@
+# KASTARA-CUTSCENE v1.0.0
+# Coordinates below are examples. Set them to real locations in your spawn world.
+settings:
+  first-join-only: true
+  start-delay-ticks: 40
+  lock-player: true
+  finish-gamemode: SURVIVAL
+  camera-entity-name: "KASTARA_CAMERA"
+  audio:
+    enabled: true
+    sound: "kastara:intro"
+    category: MASTER
+    volume: 1.0
+    pitch: 1.0
+  finish:
+    title: "&6&lWELCOME TO KASTARA"
+    subtitle: "&7Your destiny begins now"
+    title-fade-in: 10
+    title-stay: 70
+    title-fade-out: 20
+    sound: "block.beacon.activate"
+    particles:
+      enabled: true
+      count: 100
+      radius: 2.0
+
+spawn:
+  world: world
+  x: 0.5
+  y: 80.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 0.0
+
+# Timeline is measured from cutscene start in seconds.
+# The camera moves smoothly between these points.
+camera:
+  interpolation: smooth
+  waypoints:
+    - time: 0
+      world: world
+      x: -24.0
+      y: 105.0
+      z: -24.0
+      yaw: 45.0
+      pitch: 12.0
+    - time: 7
+      world: world
+      x: -12.0
+      y: 92.0
+      z: -12.0
+      yaw: 45.0
+      pitch: 18.0
+    - time: 13
+      world: world
+      x: -5.0
+      y: 84.0
+      z: -5.0
+      yaw: 35.0
+      pitch: 8.0
+    - time: 20
+      world: world
+      x: 0.5
+      y: 82.0
+      z: 0.5
+      yaw: 180.0
+      pitch: 15.0
+    - time: 28
+      world: world
+      x: 5.0
+      y: 88.0
+      z: 5.0
+      yaw: 225.0
+      pitch: 10.0
+    - time: 36
+      world: world
+      x: 3.0
+      y: 84.0
+      z: 3.0
+      yaw: 180.0
+      pitch: 20.0
+    - time: 45
+      world: world
+      x: 0.5
+      y: 82.0
+      z: 0.5
+      yaw: 180.0
+      pitch: 5.0
+
+scenes:
+  - time: 0
+    title: "&6&lTHE FALLEN KINGDOM"
+    subtitle: "&7Dahulu kala, Kastara berdiri megah"
+  - time: 7
+    title: "&4&lTHE GREAT CALAMITY"
+    subtitle: "&7Sebuah malapetaka mengakhiri segalanya"
+  - time: 13
+    title: "&5&lTHE LAST WIZARD"
+    subtitle: "&7Mantra terakhir mulai dirapal"
+  - time: 20
+    title: "&d&lTHE SUMMONING"
+    subtitle: "&7Jiwa dari dunia lain dipanggil"
+  - time: 28
+    title: "&f&lTHE CHOSEN"
+    subtitle: "&7Kini kaulah salah satu dari mereka"
+  - time: 36
+    title: "&6&lYOUR DESTINY"
+    subtitle: "&7Nasib Kastara berada di tanganmu"
+
+effects:
+  summoning:
+    enabled: true
+    start-time: 19
+    end-time: 36
+    particle: PORTAL
+    count-per-tick: 8
+    sound: "block.beacon.ambient"
+  arrival:
+    enabled: true
+    particle: END_ROD
+    count: 100
+    sound: "entity.enderman.teleport"
+
+messages:
+  no-player: "&cPlayer tidak ditemukan atau sedang offline."
+  started: "&aCutscene KASTARA dimulai untuk &e%player%&a."
+  stopped: "&eCutscene KASTARA dihentikan untuk &f%player%&e."
+  skipped: "&aIntro berhasil dilewati."
+  reloaded: "&aKonfigurasi KASTARA-CUTSCENE dimuat ulang."
+  only-player: "&cPerintah ini hanya bisa digunakan oleh player."
+  no-permission: "&cKamu tidak punya izin."
+  usage: "&eGunakan: /kastaracutscene <play|stop|reload> [player]"
