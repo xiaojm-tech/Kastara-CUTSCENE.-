@@ -216,6 +216,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         cleanup(session);
         active.remove(session.playerId);
         player.setSpectatorTarget(null);
+        player.stopSound(getConfig().getString("settings.audio.sound", "kastara:intro"));
         player.teleport(session.returnLocation);
         player.setGameMode(parseGameMode(getConfig().getString("settings.finish-gamemode", "SURVIVAL")));
         player.sendTitle(
@@ -259,12 +260,12 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         if (cinematicWorld == null) return p;
         String w = cinematicWorld.getName();
         p.add(new Waypoint(0,w,-24,108,-22,45,18));
-        p.add(new Waypoint(7,w,-13,94,-12,45,22));
-        p.add(new Waypoint(13,w,-6,86,-5,35,10));
-        p.add(new Waypoint(20,w,0,84,0,180,15));
-        p.add(new Waypoint(28,w,6,91,5,225,12));
-        p.add(new Waypoint(36,w,3,87,2,180,20));
-        p.add(new Waypoint(45,w,0,84,0,180,5));
+        p.add(new Waypoint(3.5,w,-13,94,-12,45,22));
+        p.add(new Waypoint(7,w,-6,86,-5,35,10));
+        p.add(new Waypoint(11,w,0,84,0,180,15));
+        p.add(new Waypoint(15,w,6,91,5,225,12));
+        p.add(new Waypoint(19,w,3,87,2,180,20));
+        p.add(new Waypoint(22.5,w,0,84,0,180,5));
         return p;
     }
 
