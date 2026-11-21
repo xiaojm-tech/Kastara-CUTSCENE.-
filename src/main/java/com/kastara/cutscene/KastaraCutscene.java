@@ -171,8 +171,8 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
             Map<?, ?> scene = scenes.get(session.sceneIndex);
             double at = number(scene.get("time"), 0);
             if (seconds < at) break;
-            String title = String.valueOf(scene.getOrDefault("title", ""));
-            String subtitle = String.valueOf(scene.getOrDefault("subtitle", ""));
+            String title = scene.get("title") == null ? "" : String.valueOf(scene.get("title"));
+            String subtitle = scene.get("subtitle") == null ? "" : String.valueOf(scene.get("subtitle"));
             player.sendTitle(color(title), color(subtitle), 5, 45, 10);
             session.sceneIndex++;
         }
@@ -251,7 +251,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         for (Map<?, ?> map : getConfig().getMapList("camera.waypoints")) {
             result.add(new Waypoint(
                     number(map.get("time"), 0),
-                    String.valueOf(map.getOrDefault("world", getConfig().getString("spawn.world", "world"))),
+                    (map.get("world") == null ? getConfig().getString("spawn.world", "world") : String.valueOf(map.get("world"))),
                     number(map.get("x"), 0),
                     number(map.get("y"), 80),
                     number(map.get("z"), 0),
