@@ -1,0 +1,10 @@
+{
+  "intro": {
+    "sounds": [
+      {
+        "name": "kastara:intro",
+        "stream": true
+      }
+    ]
+  }
+}
