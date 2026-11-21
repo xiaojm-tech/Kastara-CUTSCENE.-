@@ -7,6 +7,8 @@ import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.SoundCategory;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -35,11 +37,14 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
     private final Set<UUID> completed = new HashSet<>();
     private File playerDataFile;
     private YamlConfiguration playerData;
+    private World cinematicWorld;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         loadPlayerData();
+        cinematicWorld = createCinematicWorld();
+        if (cinematicWorld != null) buildCinematicStage(cinematicWorld);
         Bukkit.getPluginManager().registerEvents(this, this);
         getLogger().info("KASTARA-CUTSCENE v" + getDescription().getVersion() + " enabled.");
     }
@@ -76,8 +81,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         Player player = event.getPlayer();
         if (!getConfig().getBoolean("settings.first-join-only", true) || completed.contains(player.getUniqueId())) return;
 
-        completed.add(player.getUniqueId());
-        savePlayerData();
+        // Only mark completed after a successful finish, so failed starts can be retried.
         long delay = Math.max(1L, getConfig().getLong("settings.start-delay-ticks", 40L));
         Bukkit.getScheduler().runTaskLater(this, () -> {
             if (player.isOnline() && !active.containsKey(player.getUniqueId())) startSession(player);
@@ -99,11 +103,8 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
             player.sendMessage(color("&cKASTARA-CUTSCENE: minimal dua waypoint kamera diperlukan."));
             return;
         }
-        Location spawn = getSpawnLocation();
-        if (spawn == null) {
-            player.sendMessage(color("&cKASTARA-CUTSCENE: world spawn tidak ditemukan. Periksa config.yml."));
-            return;
-        }
+        Location returnLocation = player.getLocation().clone();
+        GameMode originalMode = player.getGameMode();
 
         Location initial = points.get(0).toLocation();
         if (initial == null) {
@@ -124,6 +125,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         });
 
         player.setGameMode(GameMode.SPECTATOR);
+        player.teleport(initial);
         player.setSpectatorTarget(rig);
 
         String audio = getConfig().getString("settings.audio.sound", "kastara:intro");
@@ -137,7 +139,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
             }
         }
 
-        Session session = new Session(player.getUniqueId(), rig, spawn, points);
+        Session session = new Session(player.getUniqueId(), rig, returnLocation, originalMode, points);
         active.put(player.getUniqueId(), session);
         session.task = new BukkitRunnable() {
             @Override
@@ -156,7 +158,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
                 showDueScene(current, session, seconds);
                 runSummoningEffects(session, seconds);
 
-                double finalTime = Math.max(1.0, getConfig().getDouble("camera.waypoints[-1].time", points.get(points.size() - 1).time));
+                double finalTime = Math.max(1.0, points.get(points.size() - 1).time);
                 if (seconds >= finalTime) {
                     cancel();
                     finishSession(current, session);
@@ -202,10 +204,12 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
             active.remove(session.playerId);
             return;
         }
+        completed.add(session.playerId);
+        savePlayerData();
         cleanup(session);
         active.remove(session.playerId);
         player.setSpectatorTarget(null);
-        player.teleport(session.spawn);
+        player.teleport(session.returnLocation);
         player.setGameMode(parseGameMode(getConfig().getString("settings.finish-gamemode", "SURVIVAL")));
         player.sendTitle(
                 color(getConfig().getString("settings.finish.title", "&6&lWELCOME TO KASTARA")),
@@ -215,7 +219,7 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
                 getConfig().getInt("settings.finish.title-fade-out", 20)
         );
         if (getConfig().getBoolean("effects.arrival.enabled", true)) {
-            Location at = session.spawn.clone().add(0, 1, 0);
+            Location at = session.returnLocation.clone().add(0, 1, 0);
             try {
                 Particle particle = Particle.valueOf(getConfig().getString("effects.arrival.particle", "END_ROD").toUpperCase());
                 at.getWorld().spawnParticle(particle, at, getConfig().getInt("effects.arrival.count", 100), 1.2, 1.5, 1.2, 0.08);
@@ -234,11 +238,8 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
         player.setSpectatorTarget(null);
         String audio = getConfig().getString("settings.audio.sound", "kastara:intro");
         player.stopSound(audio);
-        if (restoreSurvival) player.setGameMode(GameMode.SURVIVAL);
-        if (teleportToSpawn) {
-            Location spawn = getSpawnLocation();
-            if (spawn != null) player.teleport(spawn);
-        }
+        if (restoreSurvival) player.setGameMode(session.originalMode);
+        if (teleportToSpawn) player.teleport(session.returnLocation);
     }
 
     private void cleanup(Session session) {
@@ -247,20 +248,72 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
     }
 
     private List<Waypoint> loadWaypoints() {
-        List<Waypoint> result = new ArrayList<>();
-        for (Map<?, ?> map : getConfig().getMapList("camera.waypoints")) {
-            result.add(new Waypoint(
-                    number(map.get("time"), 0),
-                    (map.get("world") == null ? getConfig().getString("spawn.world", "world") : String.valueOf(map.get("world"))),
-                    number(map.get("x"), 0),
-                    number(map.get("y"), 80),
-                    number(map.get("z"), 0),
-                    (float) number(map.get("yaw"), 0),
-                    (float) number(map.get("pitch"), 0)
-            ));
+        List<Waypoint> p = new ArrayList<>();
+        if (cinematicWorld == null) return p;
+        String w = cinematicWorld.getName();
+        p.add(new Waypoint(0,w,-24,108,-22,45,18));
+        p.add(new Waypoint(7,w,-13,94,-12,45,22));
+        p.add(new Waypoint(13,w,-6,86,-5,35,10));
+        p.add(new Waypoint(20,w,0,84,0,180,15));
+        p.add(new Waypoint(28,w,6,91,5,225,12));
+        p.add(new Waypoint(36,w,3,87,2,180,20));
+        p.add(new Waypoint(45,w,0,84,0,180,5));
+        return p;
+    }
+
+    private World createCinematicWorld() {
+        String name = getConfig().getString("cinematic-world.name", "kastara_cinematic");
+        World world = Bukkit.getWorld(name);
+        if (world != null) return world;
+        WorldCreator creator = new WorldCreator(name);
+        creator.environment(World.Environment.NORMAL);
+        creator.generateStructures(false);
+        world = creator.createWorld();
+        if (world != null) {
+            world.setGameRule(org.bukkit.GameRule.DO_MOB_SPAWNING, false);
+            world.setGameRule(org.bukkit.GameRule.DO_DAYLIGHT_CYCLE, false);
+            world.setTime(18000);
+            world.setStorm(false);
+            world.setThundering(false);
         }
-        result.sort((a, b) -> Double.compare(a.time, b.time));
-        return result;
+        return world;
+    }
+
+    private void buildCinematicStage(World w) {
+        org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(this, "stage-built");
+        if (w.getPersistentDataContainer().has(key, org.bukkit.persistence.PersistentDataType.BYTE)) return;
+        int y=80;
+        for(int x=-30;x<=30;x++) for(int z=-24;z<=24;z++) {
+            if(Math.abs(x)<5 || Math.abs(z)<4)
+                w.getBlockAt(x,y,z).setType((Math.abs(x)==4 || Math.abs(z)==3) ? Material.CRACKED_STONE_BRICKS : Material.STONE_BRICKS,false);
+        }
+        for(int x=-20;x<=20;x++) for(int z : new int[]{-16,16}) {
+            if(Math.abs(x)<7 || Math.abs(x)>13) {
+                int h=3+Math.floorMod(x*7+z,5);
+                for(int j=1;j<=h;j++) w.getBlockAt(x,y+j,z).setType(j==h?Material.MOSSY_STONE_BRICKS:Material.STONE_BRICKS,false);
+            }
+        }
+        for(int z=-16;z<=16;z++) for(int x : new int[]{-20,20}) {
+            if(Math.abs(z)<5 || Math.abs(z)>10)
+                for(int j=1;j<=5+Math.floorMod(z*3+x,4);j++) w.getBlockAt(x,y+j,z).setType(Material.MOSSY_STONE_BRICKS,false);
+        }
+        int[][] pillars={{-9,-8},{9,-8},{-9,8},{9,8},{-13,0},{13,0}};
+        for(int[] p:pillars) for(int j=1;j<=4+Math.floorMod(p[0]*p[1],4);j++)
+            w.getBlockAt(p[0],y+j,p[1]).setType(j%3==0?Material.CHISELED_STONE_BRICKS:Material.POLISHED_ANDESITE,false);
+        for(int x=-4;x<=4;x++) for(int z=-4;z<=4;z++) {
+            if(x*x+z*z<=16) w.getBlockAt(x,y+1,z).setType(Material.POLISHED_BLACKSTONE_BRICKS,false);
+            if(x*x+z*z<=9) w.getBlockAt(x,y+2,z).setType(Material.PURPUR_BLOCK,false);
+        }
+        w.getBlockAt(0,y+3,0).setType(Material.CRYING_OBSIDIAN,false);
+        w.getBlockAt(0,y+4,0).setType(Material.BEACON,false);
+        int[][] crystals={{-3,-3},{3,-3},{-3,3},{3,3}};
+        for(int[] p:crystals) {
+            w.getBlockAt(p[0],y+3,p[1]).setType(Material.AMETHYST_BLOCK,false);
+            w.getBlockAt(p[0],y+4,p[1]).setType(Material.END_ROD,false);
+        }
+        w.getPersistentDataContainer().set(key,org.bukkit.persistence.PersistentDataType.BYTE,(byte)1);
+        w.setSpawnLocation(0,y+5,0);
+        getLogger().info("Generated KASTARA ruined kingdom and summoning altar in "+w.getName());
     }
 
     private Location interpolate(List<Waypoint> points, double seconds) {
@@ -282,17 +335,6 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
             }
         }
         return points.get(points.size() - 1).toLocation();
-    }
-
-    private Location getSpawnLocation() {
-        World world = Bukkit.getWorld(getConfig().getString("spawn.world", "world"));
-        if (world == null) return null;
-        return new Location(world,
-                getConfig().getDouble("spawn.x", 0.5),
-                getConfig().getDouble("spawn.y", 80),
-                getConfig().getDouble("spawn.z", 0.5),
-                (float) getConfig().getDouble("spawn.yaw", 0),
-                (float) getConfig().getDouble("spawn.pitch", 0));
     }
 
     private double number(Object value, double fallback) {
@@ -365,16 +407,18 @@ public final class KastaraCutscene extends JavaPlugin implements Listener {
     private static final class Session {
         private final UUID playerId;
         private final ArmorStand camera;
-        private final Location spawn;
+        private final Location returnLocation;
+        private final GameMode originalMode;
         private final List<Waypoint> points;
         private BukkitTask task;
         private int elapsedTicks;
         private int sceneIndex;
         private boolean summonSoundPlayed;
-        private Session(UUID playerId, ArmorStand camera, Location spawn, List<Waypoint> points) {
+        private Session(UUID playerId, ArmorStand camera, Location returnLocation, GameMode originalMode, List<Waypoint> points) {
             this.playerId = playerId;
             this.camera = camera;
-            this.spawn = spawn;
+            this.returnLocation = returnLocation;
+            this.originalMode = originalMode;
             this.points = points;
         }
     }
